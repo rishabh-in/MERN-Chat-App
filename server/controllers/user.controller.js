@@ -42,12 +42,23 @@ const authUser = asyncHandler(async (req, res) => {
       token: generateToken(user._id)
     })
   } else {
-    res.status(401).json({
-      error: "Invalid Email or Password"
-    })
+    res.status(401)
     throw new Error('Invalid Email or Password');
   }
-})
+});
+
+// /api/user?search=rishabh
+const allUsers = asyncHandler(async (req, res) => {
+  // const search = req.query.search;
+  const keyword = req.query.search ? {
+    "$or": [
+      { name: { "$regex": req.query.search, "$options": "i" } },
+      { email: { "$regex": req.query.search, "$options": "i" } }
+    ]
+  } : {};
+  const users = await Users.find(keyword).find({ _id: { "$ne": req.user._id } });
+  res.send(users)
+});
 
 // Just for testing
 const deleteUser = asyncHandler(async (req, res) => {
@@ -60,9 +71,9 @@ const deleteUser = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(401).json({
-      error: "Invalid Email"
+      error: "Email does not exist"
     })
   }
 })
 
-module.exports = { registerUser, authUser, deleteUser }
+module.exports = { registerUser, authUser, allUsers, deleteUser }
